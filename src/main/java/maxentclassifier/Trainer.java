@@ -12,8 +12,10 @@ public class Trainer {
   public static DoccatModel train(List<Article> as) {
     FeatureGenerator[] fs = {new BagOfWordsFeatureGenerator()};
     TrainingParameters param = new TrainingParameters();
+    param.put("Threads", "8");
+    param.put("Algorithm", "MAXENT");
     param.put("Cutoff", "2");
-    param.put("Iterations", "700");
+    param.put("Iterations", "300");
 
     DoccatModel res = null;
     try {
