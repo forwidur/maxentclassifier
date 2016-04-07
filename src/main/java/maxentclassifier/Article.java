@@ -9,7 +9,7 @@ public class Article extends DocumentSample {
   public String body;
 
   public Article(String title, String abs, Integer topic, String text) {
-    super(Integer.toString(topic), text);
+    super(Integer.toString(topic), Tokenizer.INSTANCE.tokenize(text.toLowerCase()));
     this.title = title;
     this.abs = abs;
     spec = topic;

@@ -20,7 +20,7 @@ public class Trainer {
     DoccatModel res = null;
     try {
       res = DocumentCategorizerME.train("en",
-          new ArticleStream(as), param, new DoccatFactory(SimpleTokenizer.INSTANCE, fs));
+          new ArticleStream(as), param, new DoccatFactory(Tokenizer.INSTANCE, fs));
     } catch (IOException e) {
       e.printStackTrace();
       System.exit(2);
