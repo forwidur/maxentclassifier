@@ -87,9 +87,11 @@ public class Trainer {
   public static void main(String[] args) {
     DataSource s = new DataSource();
 
-    final List<Article> as = s.getArticles("WHERE specialty_ids IS NOT NULL");
-    System.out.println(String.format("Read: %d", as.size()));
+    String f = "../article-signal-gen/articles.json";
+    System.out.print(String.format("Reading from: %s. ", f));
+    final List<Article> as = s.getArticles(f);
+    System.out.println(String.format("Read: %d articles.", as.size()));
 
-    runLoop(as, 10, 50, 1000);
+    runLoop(as, 1, 200, 1000);
   }
 }

@@ -4,15 +4,22 @@ import opennlp.tools.doccat.DocumentSample;
 import opennlp.tools.util.ObjectStream;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ArticleStream implements ObjectStream<DocumentSample> {
-  private final List<Article> as_;
+  private final List<DocumentSample> as_ = new ArrayList<>();
   private int cnt_ = 0;
+  private int specCnt_;
 
 
   public ArticleStream(List<Article> as) {
-    this.as_ = as;
+    as.stream().forEach(a -> {
+      for(Integer s: a.specs) {
+        as_.add(new DocumentSample(s.toString(), a.signals()));
+      }
+    });
   }
 
   @Override
