@@ -30,7 +30,7 @@ public class Trainer {
     return res;
   }
 
-  private static double eval(DoccatModel m, List<Article> val_as, int iters) {
+  private static double eval(DoccatModel m, List<Article> val_as, int iters, double targetPrecision) {
     DocumentCategorizerME c = new DocumentCategorizerME(m);
 
     double misses = 1;
@@ -68,7 +68,40 @@ public class Trainer {
       e.printStackTrace();
     }
 
-    return precision;
+    Collections.sort(hitScores);
+    Collections.sort(missScores);
+
+    return findRemainingArticles(targetPrecision, hitScores, missScores);
+  }
+
+  private static double findRemainingArticles(
+      double targetPrec, List<Double> hits, List<Double> misses
+  ) {
+    assert targetPrec <= 1;
+    final int th = hits.size();
+    final int tm = misses.size();
+    int hi = 0;
+    int mi = 0;
+    while (hi < tm) {
+      final int rh = th - hi;
+      final int rm = tm - mi;
+      final double prec = (double)rh / (rh + rm);
+      System.out.println(String.format("hi: %d mi: %d prec: %f", hi, mi, prec));
+      if (prec >= targetPrec) {
+        final double score = Double.min(hits.get(hi), misses.get(mi));
+        final double remain = (double)(rh + rm) / (th + tm);
+        System.out.println(String.format(
+            "%f precision reached: score: %f, fraction of remaining articles: %f",
+            targetPrec, score, remain));
+        return remain;
+      }
+      if (hits.get(hi) <= misses.get(mi)) {
+        hi++;
+      } else {
+        mi++;
+      }
+    }
+    return 0;
   }
 
   private static int runLoop(List<Article> as, int reps, int step, int maxIter) {
@@ -90,7 +123,7 @@ public class Trainer {
 
         DoccatModel m = train(train_as, iter);
 
-        double acc = eval(m, val_as, iter);
+        double acc = eval(m, val_as, iter, 0.8);
         accAcum += acc;
       }
       double avgAcc = accAcum / reps;
