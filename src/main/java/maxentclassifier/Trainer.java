@@ -1,13 +1,14 @@
 package maxentclassifier;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
+import com.google.common.primitives.Doubles;
+import com.google.common.primitives.Ints;
 import opennlp.tools.doccat.*;
 import opennlp.tools.util.TrainingParameters;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 
 public class Trainer {
   public static DoccatModel train(List<Article> as, int iterations) {
@@ -21,7 +22,7 @@ public class Trainer {
     DoccatModel res = null;
     try {
       res = DocumentCategorizerME.train("en",
-          new ArticleStream(as), param, new DoccatFactory(Tokenizer.INSTANCE, fs));
+          new ArticleStream(as), param, new DoccatFactory(null, fs));
     } catch (IOException e) {
       e.printStackTrace();
       System.exit(2);
@@ -30,15 +31,23 @@ public class Trainer {
   }
 
   private static double eval(DoccatModel m, List<Article> val_as) {
-    DocumentCategorizerEvaluator eval =
-        new DocumentCategorizerEvaluator(new DocumentCategorizerME(m));
+    DocumentCategorizerME c = new DocumentCategorizerME(m);
+
+    double misses = 1;
 
     for(Article a: val_as) {
-      eval.processSample(a);
+      double[] scores = c.categorize(a.signals());
+      String cat = c.getBestCategory(scores);
+      double topScore = Doubles.max(scores);
+      boolean hit = a.specs.contains(Integer.parseInt(cat));
+      if (!hit) {
+        misses++;
+        System.out.println(String.format("Miss %d(%s) as %s score %f",
+            a.id, Joiner.on(",").join(a.specs.toArray()), cat, topScore));
+      }
     }
 
-    System.out.println(eval);
-    return eval.getAccuracy();
+    return 1 - misses / val_as.size();
   }
 
   private static int runLoop(List<Article> as, int reps, int step, int maxIter) {
