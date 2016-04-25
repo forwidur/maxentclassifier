@@ -1,13 +1,13 @@
 package maxentclassifier;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Strings;
 import com.google.common.primitives.Doubles;
-import com.google.common.primitives.Ints;
 import opennlp.tools.doccat.*;
 import opennlp.tools.util.TrainingParameters;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class Trainer {
@@ -30,10 +30,12 @@ public class Trainer {
     return res;
   }
 
-  private static double eval(DoccatModel m, List<Article> val_as) {
+  private static double eval(DoccatModel m, List<Article> val_as, int iters) {
     DocumentCategorizerME c = new DocumentCategorizerME(m);
 
     double misses = 1;
+    List<Double> missScores = new ArrayList<>();
+    List<Double> hitScores = new ArrayList<>();
 
     for(Article a: val_as) {
       double[] scores = c.categorize(a.signals());
@@ -42,12 +44,31 @@ public class Trainer {
       boolean hit = a.specs.contains(Integer.parseInt(cat));
       if (!hit) {
         misses++;
-        System.out.println(String.format("Miss %d(%s) as %s score %f",
-            a.id, Joiner.on(",").join(a.specs.toArray()), cat, topScore));
+//        System.out.println(String.format("Miss %d(%s) as %s score %f",
+//           a.id, Joiner.on(",").join(a.specs.toArray()), cat, topScore));
+        missScores.add(topScore);
+      } else {
+        hitScores.add(topScore);
       }
     }
 
-    return 1 - misses / val_as.size();
+    try {
+      Files.write(Paths.get("hits"), Joiner.on('\n').join(hitScores).getBytes());
+      Files.write(Paths.get("misses"), Joiner.on('\n').join(missScores).getBytes());
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+    double precision = 1 - misses / val_as.size();
+
+    try {
+      Runtime.getRuntime().exec(String.format(
+          "gnuplot -p -e \"TITLE='%d iterations precision %f'\" -p hist.plot", iters, precision));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+    return precision;
   }
 
   private static int runLoop(List<Article> as, int reps, int step, int maxIter) {
@@ -69,7 +90,7 @@ public class Trainer {
 
         DoccatModel m = train(train_as, iter);
 
-        double acc = eval(m, val_as);
+        double acc = eval(m, val_as, iter);
         accAcum += acc;
       }
       double avgAcc = accAcum / reps;
