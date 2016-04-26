@@ -88,7 +88,7 @@ public class Trainer {
       final double prec = (double)rh / (rh + rm);
       System.out.println(String.format("hi: %d mi: %d prec: %f", hi, mi, prec));
       if (prec >= targetPrec) {
-        final double score = Double.min(hits.get(hi), misses.get(mi));
+        final double score = mi < tm ? Double.min(hits.get(hi), misses.get(mi)) : hi;
         final double remain = (double)(rh + rm) / (th + tm);
         System.out.println(String.format(
             "%f precision reached: score: %f, fraction of remaining articles: %f",
