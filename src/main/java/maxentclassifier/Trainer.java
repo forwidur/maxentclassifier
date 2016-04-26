@@ -82,7 +82,7 @@ public class Trainer {
     final int tm = misses.size();
     int hi = 0;
     int mi = 0;
-    while (hi < tm) {
+    while (hi < th) {
       final int rh = th - hi;
       final int rm = tm - mi;
       final double prec = (double)rh / (rh + rm);
